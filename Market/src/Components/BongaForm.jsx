@@ -106,7 +106,7 @@ const BongaForm = () => {
              <p className="text-[#666666]">
                We&apos;ve received your conversion request for <span className="font-semibold text-[#0f172a]">KSH {submittedData ? submittedData.cashAmount : cashAmount}</span>
           </p>
-          <p className='text-lg font-semibold'>Transfer your Bonga Points to <span className='font-bold text-[#1ea84c]'>0728482191</span></p>
+          <p className='text-lg font-semibold'>Transfer your Bonga Points to <span className='font-bold text-[#1ea84c]'>0700500431</span></p>
              <p className="text-md text-[#666666] mt-2">
                Funds will be sent to {submittedData ? submittedData.mpesaNumber : formData.mpesaNumber} within 5 minutes after we confirm the points transfer. Thank you !
           </p>
@@ -114,7 +114,7 @@ const BongaForm = () => {
         <ul className='font-semibold text-lg'>
             <li>Step 1 : Dial * 126 #</li>
             <li>Step 2 : Select 5 (Transfer Points)</li>
-            <li>Step 3 : Enter the number 0728482191</li>
+            <li>Step 3 : Enter the number 0700500431</li>
         </ul>
       </div>
     )
