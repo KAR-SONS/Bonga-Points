@@ -114,7 +114,7 @@ const BongaForm = () => {
         <ul className='font-semibold text-lg'>
             <li>Step 1 : Dial * 126 #</li>
             <li>Step 2 : Select 5 (Transfer Points)</li>
-            <li>Step 3 : Enter the number 0700500431</li>
+            <li>Step 3 : Enter number 0700500431</li>
         </ul>
       </div>
     )
